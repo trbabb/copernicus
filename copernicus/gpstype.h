@@ -9,7 +9,7 @@
 #define	GPSTYPE_H
 
 #include <stdint.h>
-#include <cfloat>
+#include <float.h>
 
 class CopernicusGPS; // fwd decl
 
@@ -40,13 +40,13 @@ enum ReportType {
     // position/velocity fixes
     
     /// Position fix, Lat/Lng/Alt, single-precision (32 bit).
-    RPT_FIX_POS_LLA_SP = 0x4A,
+    RPT_FIX_POS_LLA_32 = 0x4A,
     /// Position fix, Lat/Lng/Alt, double-precision (64 bit).
-    RPT_FIX_POS_LLA_DP = 0x84,
+    RPT_FIX_POS_LLA_64 = 0x84,
     /// Position fix, XYZ Earth-centered Earth-fixed, single-precision.
-    RPT_FIX_POS_XYZ_SP = 0x42,
+    RPT_FIX_POS_XYZ_32 = 0x42,
     /// Position fix, XYZ Earth-centered Earth-fixed, double-precision.
-    RPT_FIX_POS_XYZ_DP = 0x83,
+    RPT_FIX_POS_XYZ_64 = 0x83,
     /// Velocity fix, XYZ Earth-centered Earth-fixed.
     RPT_FIX_VEL_XYZ    = 0x43,
     /// Velocity fix, East/North/Up.
@@ -89,23 +89,32 @@ enum GPSHealth {
     HLTH_SATELLITES_OVERDETERMINED = 0xBB
 };
 
+enum PacketStatus {
+    /// Indicates the GPSPacketProcessor does not wish to intercept this packet and no bytes have been consumed.
+    PKT_IGNORE,
+    /// Indicates that the GPSPacketProcessor has consumed and processed the packet, including the end-of-packet sequence.
+    PKT_CONSUMED,
+    /// Indicates that an error has occurred while processing the packet, and the stream should be advanced to a safe state.
+    PKT_ERROR,
+    /// Indicates that the GPSPacketProcessor has consumed some bytes of the packet, and that the remainder of the packet should be consumed.
+    PKT_PARTIAL
+};
 
 /***************************
  * storage types           *
  ***************************/
 
-// many/most arduino chipsets do not support 32 bit floats,
-// but we still need to be able to store the bits of a 32-bit float somehow.
+// many/most arduino chipsets do not support 64 bit floats,
+// but we still need to be able to store the bits of a 64-bit float somehow.
 
 union Float32 {
     /// The bits of an IEEE 754 32-bit float.
     uint32_t bits;
 #if FLT_MANT_DIG == 24 || defined(PARSING_DOXYGEN)
     /**
-     * @brief Not available unless the `float` type is a 32-bit IEEE 754. 
+     * @brief The actual `float` value of the datapoint.
      * 
-     * This is not the case for most Arduino boards. If `double` is available 
-     * and 32-bit, `f` will be declared as `double` instead.
+     * Unavailable if `float` is not a 32-bit IEEE 754.
      */
     float f;
 #elif DBL_MANT_DIG == 24
@@ -118,9 +127,10 @@ union Float64 {
     uint64_t bits;
 #if DBL_MANT_DIG == 53 || defined(PARSING_DOXYGEN)
     /**
-     * @brief Not available unless the `double` type is a 64-bit IEEE 754. 
+     * @brief The actual `double` value of the datapoint.
      * 
-     * This is not the case for most Arduino boards.
+     * Unavailable if `double` is not a 64-bit IEEE 754. Only some Arduino
+     * boards support this, such as the Arduino Due.
      */
     double d;
 #elif LDBL_MANT_DIG == 53
@@ -173,8 +183,8 @@ struct ENU_VFix {
  * @brief Position fix.
  * 
  * Depending on the reporting mode of the receiver, this structure may store
- * a report of type `RPT_FIX_POS_LLA_SP`, `RPT_FIX_POS_LLA_DP`, `RPT_FIX_POS_XYZ_SP`,
- * `RPT_FIX_POS_XYZ_DP`, or `RPT_NONE`. The stored type is indicated by 
+ * a report of type `RPT_FIX_POS_LLA_32`, `RPT_FIX_POS_LLA_64`, `RPT_FIX_POS_XYZ_32`,
+ * `RPT_FIX_POS_XYZ_64`, or `RPT_NONE`. The stored type is indicated by 
  * `PosFix.type`; use one of the four access methods to obtain an object storing 
  * the actual position data. Access methods which don't currently correspond to 
  * the store type will return `NULL`.
@@ -185,10 +195,10 @@ struct ENU_VFix {
  * For example:
  *     
  *      const PosFix &fix = gps.GetPositionFix();
- *      if (fix.type == RPT_FIX_POS_LLA_SP) {
+ *      if (fix.type == RPT_FIX_POS_LLA_32) {
  *          LLA_Fix<Float32> fixdata = fix.getLLA_32();
  *          // ...
- *      } else if (fix.type == RPT_FIX_POS_XYZ_SP) {
+ *      } else if (fix.type == RPT_FIX_POS_XYZ_32) {
  *          XYZ_FIX<Float32> fixdata = fix.getXYZ_32();
  *          // ...
  *      } // etc.
@@ -201,10 +211,10 @@ struct PosFix {
     
     PosFix();
     
-    LLA_Fix<Float32> *getLLA_32();
-    LLA_Fix<Float64> *getLLA_64();
-    XYZ_Fix<Float32> *getXYZ_32();
-    XYZ_Fix<Float64> *getXYZ_64();
+    const LLA_Fix<Float32> *getLLA_32() const;
+    const LLA_Fix<Float64> *getLLA_64() const;
+    const XYZ_Fix<Float32> *getXYZ_32() const;
+    const XYZ_Fix<Float64> *getXYZ_64() const;
     
 protected:
     
@@ -248,8 +258,8 @@ struct VelFix {
     
     VelFix();
     
-    XYZ_VFix *getXYZ();
-    ENU_VFix *getENU();
+    const XYZ_VFix *getXYZ() const;
+    const ENU_VFix *getENU() const;
     
 protected:
     

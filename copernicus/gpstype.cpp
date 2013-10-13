@@ -12,32 +12,32 @@
 PosFix::PosFix() : type(RPT_NONE) {}
 VelFix::VelFix() : type(RPT_NONE) {}
 
-LLA_Fix<Float32>* PosFix::getLLA_32() {
-    if (type == RPT_FIX_POS_LLA_SP) return &lla_32;
+const LLA_Fix<Float32>* PosFix::getLLA_32() const {
+    if (type == RPT_FIX_POS_LLA_32) return &lla_32;
     else return NULL;
 }
 
-LLA_Fix<Float64>* PosFix::getLLA_64() {
-    if (type == RPT_FIX_POS_LLA_DP) return &lla_64;
+const LLA_Fix<Float64>* PosFix::getLLA_64() const {
+    if (type == RPT_FIX_POS_LLA_64) return &lla_64;
     else return NULL;
 }
 
-XYZ_Fix<Float32>* PosFix::getXYZ_32() {
-    if (type == RPT_FIX_POS_XYZ_SP) return &xyz_32;
+const XYZ_Fix<Float32>* PosFix::getXYZ_32() const {
+    if (type == RPT_FIX_POS_XYZ_32) return &xyz_32;
     else return NULL;
 }
 
-XYZ_Fix<Float64>* PosFix::getXYZ_64() {
-    if (type == RPT_FIX_POS_XYZ_DP) return &xyz_64;
+const XYZ_Fix<Float64>* PosFix::getXYZ_64() const {
+    if (type == RPT_FIX_POS_XYZ_64) return &xyz_64;
     else return NULL;
 }
 
-XYZ_VFix *VelFix::getXYZ() {
+const XYZ_VFix *VelFix::getXYZ() const {
     if (type == RPT_FIX_VEL_XYZ) return &xyz;
     else return NULL;
 }
 
-ENU_VFix *VelFix::getENU() {
+const ENU_VFix *VelFix::getENU() const {
     if (type == RPT_FIX_VEL_ENU) return &enu;
     else return NULL;
 }

@@ -46,6 +46,7 @@ CopernicusGPS::CopernicusGPS(int serial_num):
             m_serial = NULL;
 #endif
     }
+    if (m_serial != NULL) m_serial->begin(TSIP_BAUD_RATE);
 }
 
 /***************************
@@ -202,8 +203,8 @@ ReportType CopernicusGPS::processOnePacket(bool block) {
             continue;
         } else {
             ReportType rpt = static_cast<ReportType>(b);
-            processReport(rpt);
-            return rpt;
+            if (not processReport(rpt)) return RPT_ERROR;
+            else return rpt;
         }
     }
 }
@@ -228,16 +229,15 @@ bool CopernicusGPS::endReport() {
 
 
 bool CopernicusGPS::processReport(ReportType type) {
-    bool ok = false;
-    bool unknown = false;
+    bool ok = true;
     switch (type) {
-        case RPT_FIX_POS_LLA_SP:
+        case RPT_FIX_POS_LLA_32:
             ok = process_p_LLA_32(); break;
-        case RPT_FIX_POS_LLA_DP:
+        case RPT_FIX_POS_LLA_64:
             ok = process_p_LLA_64(); break;
-        case RPT_FIX_POS_XYZ_SP:
+        case RPT_FIX_POS_XYZ_32:
             ok = process_p_XYZ_32(); break;
-        case RPT_FIX_POS_XYZ_DP:
+        case RPT_FIX_POS_XYZ_64:
             ok = process_p_XYZ_64(); break;
         case RPT_FIX_VEL_XYZ:
             ok = process_v_XYZ(); break;
@@ -250,17 +250,25 @@ bool CopernicusGPS::processReport(ReportType type) {
         case RPT_ADDL_STATUS:
             ok = process_addl_status(); break;
         default:
-            // consume the rest of this packet, and
-            // process the next one if it's available.
-            unknown = true;
-            flushToNextPacket(false);
-            break;
+            // give the user's packet processors a swipe
+            PacketStatus st = PKT_IGNORE;
+            for (int i = 0; i < m_n_listeners; i++) {
+                st = m_listeners[i]->gpsPacket(type, this);
+                if (st != PKT_IGNORE) {
+                    ok = (st != PKT_ERROR);
+                    break;
+                }
+            } 
+            if (st != PKT_CONSUMED) {
+                // consume the rest of this packet.
+                flushToNextPacket(false);
+            }
     }
-    return unknown or ok;
+    return ok;
 }
 
 bool CopernicusGPS::process_p_LLA_32() {
-    m_pfix.type = RPT_FIX_POS_LLA_SP;
+    m_pfix.type = RPT_FIX_POS_LLA_32;
     LLA_Fix<Float32> *fix = &m_pfix.lla_32;
     uint8_t buf[4];
     
@@ -276,7 +284,7 @@ bool CopernicusGPS::process_p_LLA_32() {
 }
 
 bool CopernicusGPS::process_p_LLA_64() {
-    m_pfix.type = RPT_FIX_POS_LLA_DP;
+    m_pfix.type = RPT_FIX_POS_LLA_64;
     LLA_Fix<Float64> *fix = &m_pfix.lla_64;
     uint8_t buf[8];
     
@@ -292,7 +300,7 @@ bool CopernicusGPS::process_p_LLA_64() {
 }
 
 bool CopernicusGPS::process_p_XYZ_32() {
-    m_pfix.type = RPT_FIX_POS_XYZ_SP;
+    m_pfix.type = RPT_FIX_POS_XYZ_32;
     XYZ_Fix<Float32> *fix = &m_pfix.xyz_32;
     uint8_t buf[4];
     
@@ -308,7 +316,7 @@ bool CopernicusGPS::process_p_XYZ_32() {
 }
 
 bool CopernicusGPS::process_p_XYZ_64() {
-    m_pfix.type = RPT_FIX_POS_XYZ_DP;
+    m_pfix.type = RPT_FIX_POS_XYZ_64;
     XYZ_Fix<Float64> *fix = &m_pfix.xyz_64;
     uint8_t buf[8];
     
@@ -429,28 +437,28 @@ const VelFix& CopernicusGPS::getVelocityFix() const {
 }
 
 /**
- * Add a listener to be notified of GPS events. At most
- * `N_GPS_LISTENERS` (16) are supported at a time. 
- * @param lsnr Listener to add.
- * @return `false` if there was not enough space to add the listener, `true` otherwise.
+ * Add a `GPSPacketProcessor` to be notified of incoming TSIP packets. At most
+ * `MAX_PKT_PROCESSORS` (8) are supported at a time. 
+ * @param pcs Processor to add.
+ * @return `false` if there was not enough space to add the processor, `true` otherwise.
  */
-bool CopernicusGPS::addListener(GPSPacketProcessor *lsnr) {
+bool CopernicusGPS::addPacketProcessor(GPSPacketProcessor *pcs) {
     for (int i = 0; i < m_n_listeners; i++) {
-        if (m_listeners[i] == lsnr) return true;
+        if (m_listeners[i] == pcs) return true;
     }
-    if (m_n_listeners >= N_GPS_LISTENERS) return false;
-    m_listeners[m_n_listeners++] = lsnr;
+    if (m_n_listeners >= MAX_PKT_PROCESSORS) return false;
+    m_listeners[m_n_listeners++] = pcs;
     return true;
 }
 
 /**
- * Cease to notify the given `GPSListener` of GPS events.
- * @param lsnr Listener to remove.
+ * Cease to notify the given `GPSPacketProcessor` of incoming TSIP packets.
+ * @param pcs Processor to remove.
  */
-void CopernicusGPS::removeListener(GPSPacketProcessor *lsnr) {
+void CopernicusGPS::removePacketProcessor(GPSPacketProcessor *pcs) {
     bool found = false;
     for (int i = 0; i < m_n_listeners; i++) {
-        if (m_listeners[i] == lsnr) {
+        if (m_listeners[i] == pcs) {
             found = true;
         }
         if (found and i < m_n_listeners - 1) {

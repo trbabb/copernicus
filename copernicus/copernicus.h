@@ -28,7 +28,9 @@
 
 // arduino doesn't support std::vector
 // so today we will be violating the zero/one/infinity rule.
-#define N_GPS_LISTENERS 16
+#define MAX_PKT_PROCESSORS 8
+
+#define TSIP_BAUD_RATE 38400
 
 #include "gpstype.h"
 #include "Arduino.h"
@@ -39,11 +41,31 @@ class CopernicusGPS; // fwd decl
  * Listener class          *
  ***************************/
 
+/**
+ * @brief Class for directly intercepting and processing TSIP packets.
+ * 
+ * This provides a mechanism by which a client may make use of Trimble packets
+ * which are not directly monitored/implemented by this API.
+ * 
+ * Only packets not monitored by the CopernicusGPS class will be passed on to 
+ * registered GPSPacketProcessors.
+ */
 class GPSPacketProcessor {
 public:
     virtual ~GPSPacketProcessor();
     
-    virtual bool gpsPacket(ReportType type, CopernicusGPS *gps) = 0;
+    /**
+     * Called when a new TSIP packet has arrived. The packet header (`DLE` byte
+     * and report ID) will have already been consumed. 
+     * 
+     * This function must not leave the stream in the middle of a `DLE` escape
+     * sequence; that is to say an even number of `DLE` bytes must be consumed. 
+     * 
+     * @param type Type of TSIP report waiting in the serial stream.
+     * @param gps GPS module which intercepted the report.
+     * @return A `PacketStatus` indicating the state of the stream.
+     */
+    virtual PacketStatus gpsPacket(ReportType type, CopernicusGPS *gps) = 0;
 };
 
 /***************************
@@ -75,8 +97,8 @@ public:
     const VelFix&    getVelocityFix() const;
     const GPSStatus& getStatus() const;
     
-    bool addListener(GPSPacketProcessor *lsnr);
-    void removeListener(GPSPacketProcessor *lsnr);
+    bool addPacketProcessor(GPSPacketProcessor *pcs);
+    void removePacketProcessor(GPSPacketProcessor *pcs);
     
 private:
     
@@ -103,7 +125,7 @@ private:
     VelFix    m_vfix;
     GPSTime   m_time;
     GPSStatus m_status;
-    GPSPacketProcessor *m_listeners[N_GPS_LISTENERS];
+    GPSPacketProcessor *m_listeners[MAX_PKT_PROCESSORS];
     uint8_t m_n_listeners;
 };
 
