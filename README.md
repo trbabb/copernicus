@@ -29,12 +29,56 @@ Minimum connections
     <td>Open</td>
     <td>7</td>
     <td>3</td>
-    <td>LOW</td>
+    <td>GND</td>
+  </tr>
+  <tr>
+    <td>Reserved2 ("boot" on some breakouts)</td>
+    <td>10</td>
+    <td>6</td>
+    <td>VCC</td>
+  </tr>
+  <tr>
+    <td>VCC</td>
+    <td>12</td>
+    <td>8</td>
+    <td>Supply voltage (3.3v)</td>
+  </tr>
+  <tr>
+    <td>GND</td>
+    <td>13</td>
+    <td>9</td>
+    <td>Ground (0v)</td>
+  </tr>
+  <tr>
+    <td>XSTBY</td>
+    <td>14</td>
+    <td>10</td>
+    <td>Standby (VCC)</td>
+  </tr>
+  <tr><th colspan=4></th></tr>
+  <tr>
+    <td>TX-A</td>
+    <td>23</td>
+    <td>7</td>
+    <td>Arduino serial rx pin</td>
+  </tr>
+  <tr>
+    <td>RX-A</td>
+    <td>21</td>
+    <td>5</td>
+    <td>Arduino serial tx pin, via voltage divider or logic level shifter.</td>
+  </tr>
+  <tr>
+    <td>PPS</td>
+    <td>19</td>
+    <td>3</td>
+    <td>Any Arduino interrupt pin (required for timing only)</td>
   </tr>
 </table>
 
-h1. Further information
+Further information
+===================
 
-The full manual describing the features and communication protocol of the 
-Trimble Copernicus module is available 
+The full manual describing the pins, features, and communication protocol 
+of the Trimble Copernicus module is available 
 [here](http://dlnmh9ip6v2uc.cloudfront.net/datasheets/Sensors/GPS/63530-10_Rev-B_Manual_Copernicus-II.pdf).
