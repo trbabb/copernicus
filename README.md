@@ -26,13 +26,13 @@ Minimum connections
     <th>Connect to</th>
   </tr>
   <tr>
-    <td>Open</td>
+    <td>OPEN</td>
     <td>7</td>
     <td>3</td>
     <td>GND</td>
   </tr>
   <tr>
-    <td>Reserved2 ("boot" on some breakouts)</td>
+    <td>RESERVED2 <br>("boot" on some breakouts)</td>
     <td>10</td>
     <td>6</td>
     <td>VCC</td>
@@ -53,26 +53,26 @@ Minimum connections
     <td>XSTBY</td>
     <td>14</td>
     <td>10</td>
-    <td>Standby (VCC)</td>
+    <td>VCC</td>
   </tr>
   <tr><th colspan=4></th></tr>
   <tr>
     <td>TX-A</td>
     <td>23</td>
     <td>7</td>
-    <td>Arduino serial rx pin</td>
+    <td>Arduino serial RX pin</td>
   </tr>
   <tr>
     <td>RX-A</td>
     <td>21</td>
     <td>5</td>
-    <td>Arduino serial tx pin, via voltage divider or logic level shifter.</td>
+    <td>Arduino serial TX pin, via voltage divider or logic level shifter.</td>
   </tr>
   <tr>
     <td>PPS</td>
     <td>19</td>
     <td>3</td>
-    <td>Any Arduino interrupt pin (required for timing only)</td>
+    <td>Any Arduino interrupt pin (required for timing only).</td>
   </tr>
 </table>
 
