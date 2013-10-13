@@ -20,6 +20,12 @@
  ***************************/
 
 
+/**
+ * Construct a new `copernicus` object.
+ * 
+ * @param serial Arduino serial stream to monitor. 0 is `Serial`, 1 is 
+ * `Serial1`, etc.
+ */
 copernicus::copernicus(int serial_num):
         m_n_listeners(0) {
     // ifdefs mirrored from HardwareSerial.h

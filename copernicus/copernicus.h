@@ -66,7 +66,7 @@ public:
     bool addListener(gps_listener *lsnr);
     void removeListener(gps_listener *lsnr);
     
-protected:
+private:
     
     void processReport(ReportType type);
     

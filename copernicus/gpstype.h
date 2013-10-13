@@ -11,6 +11,16 @@
 #include <stdint.h>
 #include <cfloat>
 
+/**
+ * @defgroup datapoint
+ * @brief Various GPS datapoint types.
+ */
+
+/**
+ * @addtogroup datapoint
+ * @{
+ */
+
 /***************************
  * enums                   *
  ***************************/
@@ -87,7 +97,7 @@ enum GPSHealth {
 
 union Float32 {
     uint32_t bits;
-#if FLT_MANT_DIG == 24
+#if FLT_MANT_DIG == 24 || defined(PARSING_DOXYGEN)
     float f;
 #elif DBL_MANT_DIG == 24
     double f;
@@ -96,7 +106,7 @@ union Float32 {
 
 union Float64 {
     uint64_t bits;
-#if DBL_MANT_DIG == 53
+#if DBL_MANT_DIG == 53 || defined(PARSING_DOXYGEN)
     double d;
 #elif LDBL_MANT_DIG == 53
     long double d;
@@ -193,6 +203,8 @@ struct GPSStatus {
     bool sbas_enabled;        // pkt 0x82
     bool sbas_corrected;      // pkt 0x82
 };
+
+/// @} // addtogroup datapoint
 
 #endif	/* GPSTYPE_H */
 
