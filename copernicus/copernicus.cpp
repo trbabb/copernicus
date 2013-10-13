@@ -54,7 +54,7 @@ CopernicusGPS::CopernicusGPS(int serial_num):
  ***************************/
 
 /**
- * Being a TSIP command by sending the header bytes for the given
+ * Begin a TSIP command by sending the header bytes for the given
  * command type.
  * @param cmd Command to begin.
  */
@@ -107,7 +107,7 @@ int CopernicusGPS::readDataBytes(uint8_t *dst, int n) {
  * Encode `n` data bytes as part of a TSIP command packet and send them to the 
  * gps module. Must be called only if a command has been opened with a call to 
  * `beginCommand()`, and may be called multiple times before a call to `endCommand()`. 
- * @param bytes Data bytes to write.
+ * @param bytes Data bytes to encode and send.
  * @param n Number of bytes to encode.
  */
 void CopernicusGPS::writeDataBytes(const uint8_t* bytes, int n) {
@@ -176,6 +176,103 @@ bool CopernicusGPS::flushToNextPacket(bool block) {
  * is `false` and no data was available.
  */
 ReportType CopernicusGPS::processOnePacket(bool block) {
+    implProcessOnePacket(block, RPT_NONE);
+}
+
+/**
+ * Process packets/input until the header of a packet with type `type` is 
+ * encountered, at which point the stream will be left for the caller to process.
+ * The caller should fully consume the packet, including the end-of-packet bytes.
+ * 
+ * @param type Type of packet to wait for.
+ */
+void CopernicusGPS::waitForPacket(ReportType type) {
+    while (implProcessOnePacket(false, type) != type) {}
+}
+
+/**
+ * Consume the two terminating bytes of a TSIP packet, which
+ * should be `0x10 0x03`. Return false if the expected
+ * bytes were not found.
+ */
+bool CopernicusGPS::endReport() {
+    blockForData();
+    if (m_serial->read() != CTRL_DLE) return false;
+    blockForData();
+    if (m_serial->read() != CTRL_ETX) return false;
+    return true;
+}
+
+/***********************
+ * Commands            *
+ ***********************/
+
+bool CopernicusGPS::setFixMode(ReportType pos_fixmode, 
+                               ReportType vel_fixmode,
+                               AltMode alt,
+                               PPSMode pps,
+                               GPSTimeMode time,
+                               bool block) {
+    // request current IO settings
+    beginCommand(CMD_IO_OPTIONS);
+    endCommand();
+    waitForPacket(RPT_IO_SETTINGS);
+    
+    uint8_t bytes[4];
+    if (readDataBytes(bytes, 4) != 4) return false;
+    if (not endReport()) return false;
+    
+    const uint8_t pos_mask = 0x13;
+    const uint8_t vel_mask = 0x03;
+    const uint8_t alt_mask = 0x04;
+    const uint8_t pps_mask = 0x60;
+    const uint8_t tme_mask = 0x01;
+    
+    // alter position fixmode
+    switch (pos_fixmode) {
+        case RPT_FIX_POS_LLA_32:
+            bytes[0] = (bytes[0] & ~pos_mask) | 0x02; break;
+        case RPT_FIX_POS_LLA_64:
+            bytes[0] = (bytes[0] & ~pos_mask) | 0x12; break;
+        case RPT_FIX_POS_XYZ_32:
+            bytes[0] = (bytes[0] & ~pos_mask) | 0x01; break;
+        case RPT_FIX_POS_XYZ_64:
+            bytes[0] = (bytes[0] & ~pos_mask) | 0x11; break;
+        default: break; // do nothing
+    }
+    // alter velocity fixmode
+    switch (vel_fixmode) {
+        case RPT_FIX_VEL_XYZ:
+            bytes[1] = (bytes[1] & ~vel_mask) | 0x01; break;
+        case RPT_FIX_VEL_ENU:
+            bytes[1] = (bytes[1] & ~vel_mask) | 0x02; break;
+        default: break; // do nothing
+    }
+    // alter other fixmode settings
+    if (alt  != ALT_NOCHANGE) bytes[0] = (bytes[0] & ~alt_mask) | alt;
+    if (pps  != PPS_NOCHANGE) bytes[2] = (bytes[2] & ~pps_mask) | pps;
+    if (time != TME_NOCHANGE) bytes[2] = (bytes[2] & ~tme_mask) | time;
+    
+    beginCommand(CMD_IO_OPTIONS);
+    writeDataBytes(bytes, 4);
+    endCommand();
+    
+    if (block) {
+        waitForPacket(RPT_IO_SETTINGS);
+        flushToNextPacket();
+    }
+    
+    return true;
+}
+
+/***********************
+ * Report processing   *
+ ***********************/
+
+// will process this packet normally, unless it is of type `haltAt`, in which
+// case the stream will be left with only the header consumed, ready for
+// the caller to process. Pass RPT_NONE to always consume.
+ReportType CopernicusGPS::implProcessOnePacket(bool block, ReportType haltAt) {
     // packets are of the form:
     //   <DLE> <rpt-id> <data bytes ...> <DLE> <ETX>
     //   literal <DLE> bytes embedded in data are sent as <DLE> <DLE>.
@@ -203,30 +300,12 @@ ReportType CopernicusGPS::processOnePacket(bool block) {
             continue;
         } else {
             ReportType rpt = static_cast<ReportType>(b);
-            if (not processReport(rpt)) return RPT_ERROR;
+            if (rpt == haltAt and haltAt != RPT_NONE) return rpt;
+            else if (not processReport(rpt)) return RPT_ERROR;
             else return rpt;
         }
-    }
+    } 
 }
-
-/**
- * Consume the two terminating bytes of a TSIP packet, which
- * should be `0x10 0x03`. Return false if the expected
- * bytes were not found.
- */
-bool CopernicusGPS::endReport() {
-    blockForData();
-    if (m_serial->read() != CTRL_DLE) return false;
-    blockForData();
-    if (m_serial->read() != CTRL_ETX) return false;
-    return true;
-}
-
-
-/***********************
- * Report processing   *
- ***********************/
-
 
 bool CopernicusGPS::processReport(ReportType type) {
     bool ok = true;

@@ -3,10 +3,13 @@
  * Author: tbabb
  *
  * Created on October 5, 2013, 10:35 PM
+ * 
+ * Note: It would be entirely possible, and not difficult, to extract
+ * this module's dependency on the Arduino by replacing m_serial with
+ * any reasonable buffered serial IO class.
  */
 
 //TODO: support GPS time
-//TODO: add processOnePacket(); allow for blocking commands.
 //TODO: add commands
 //TODO: fixp support
 
@@ -84,13 +87,20 @@ class CopernicusGPS {
 public:
     CopernicusGPS(int serial=0);
     
-    void receive();
     ReportType processOnePacket(bool block=false);
+    void waitForPacket(ReportType type);
     
     void beginCommand(CommandID cmd);
     void writeDataBytes(const uint8_t *bytes, int n);
     int  readDataBytes(uint8_t *dst, int n);
     void endCommand();
+    
+    bool setFixMode(ReportType pos_fixmode,
+                    ReportType vel_fixmode,
+                    AltMode alt=ALT_NOCHANGE,
+                    PPSMode pps=PPS_NOCHANGE,
+                    GPSTimeMode time=TME_NOCHANGE,
+                    bool block=false);
     
     HardwareSerial  *getSerial();
     const PosFix&    getPositionFix() const;
@@ -101,6 +111,8 @@ public:
     void removePacketProcessor(GPSPacketProcessor *pcs);
     
 private:
+    
+    ReportType implProcessOnePacket(bool block, ReportType haltAt);
     
     bool processReport(ReportType type);
     

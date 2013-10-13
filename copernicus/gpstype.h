@@ -28,7 +28,7 @@ class CopernicusGPS; // fwd decl
  ***************************/
 
 enum CommandID {
-    
+    CMD_IO_OPTIONS = 0x35
 };
 
 enum ReportType {
@@ -63,7 +63,12 @@ enum ReportType {
     /// Satellite report.
     RPT_SATELLITES  = 0x6d,
     /// SBAS (Satellite-based augmentation system) mode report.
-    RPT_SBAS_MODE   = 0x82
+    RPT_SBAS_MODE   = 0x82,
+    
+    // replies
+    
+    /// GPS IO settings.
+    RPT_IO_SETTINGS = 0x55,
 };
 
 enum GPSHealth {
@@ -86,7 +91,7 @@ enum GPSHealth {
     /// Set if only three useable satellites have been locked.
     HLTH_SATELLITES_THREE          = 0x0B,
     /// Set if operating in overdetermined mode.
-    HLTH_SATELLITES_OVERDETERMINED = 0xBB
+    HLTH_SATELLITES_OVERDETERMINED = 0xBB,
 };
 
 enum PacketStatus {
@@ -97,7 +102,36 @@ enum PacketStatus {
     /// Indicates that an error has occurred while processing the packet, and the stream should be advanced to a safe state.
     PKT_ERROR,
     /// Indicates that the GPSPacketProcessor has consumed some bytes of the packet, and that the remainder of the packet should be consumed.
-    PKT_PARTIAL
+    PKT_PARTIAL,
+};
+
+enum AltMode {
+    /// Height above WGS-84 ellipsoid.
+    ALT_HAE  = 0x00,
+    /// Height above mean sea level.
+    ALT_MSL  = 0x01,
+    /// Flag to leave altitude mode unchanged.
+    ALT_NOCHANGE = 0xFF,
+};
+
+enum PPSMode {
+    /// PPS always on.
+    PPS_ALWAYS = 0x00,
+    /// PPS fix-based.
+    PPS_FIX    = 0x20,
+    /// PPS off.
+    PPS_OFF    = 0x40,
+    /// Flag to leave PPS unchanged.
+    PPS_NOCHANGE   = 0x60,
+};
+
+enum GPSTimeMode {
+    /// Report GPS time.
+    TME_GPSTIME  = 0x00,
+    /// Report UTC.
+    TME_UTCTIME  = 0x01,
+    /// Flag to leave time reporting mode unchanged.
+    TME_NOCHANGE = 0xFF
 };
 
 /***************************
