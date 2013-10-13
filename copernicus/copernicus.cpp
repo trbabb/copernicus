@@ -120,31 +120,93 @@ void CopernicusGPS::writeDataBytes(const uint8_t* bytes, int n) {
 }
 
 /**
- * Read, decode, and process any pending TSIP packets incoming through the serial 
- * port. Internal state will be updated and listeners notified of events as necessary. 
- * Must be called regularly or in response to serial events.
+ * Consume bytes from the serial input until an end-of-packet is
+ * reached, stopping early if and only if no data is available and `block` is 
+ * `false`. 
+ * 
+ * If this function returns `true`, the next data in the stream are expected to 
+ * be the header of the next packet. To ensure correctness, an even number of 
+ * `DLE` (0x10) bytes should have been consumed since the start of the current 
+ * packet.
+ * 
+ * If the flush terminates early due to unavailable data, then the 
+ * stream will be left in such a state that a later call to `flushToNextPacket()`
+ * or `processOnePacket()` will behave as expected.
+ * 
+ * @param block Whether to wait for the complete packet to arrive.
+ * @return True if the current packet was completely consumed/flushed.
  */
-void CopernicusGPS::receive() {
-    bool dle = false;
-    KEEP_READING:
-    while (m_serial->available() > 0) {
-        int b = m_serial->read();
-        if (dle and b != CTRL_ETX and b != CTRL_DLE) {
-            processReport(static_cast<ReportType>(b));
-            dle = false;
-        } else if ((not dle) and b == CTRL_DLE) {
-            dle = true;
-        } else {
-            dle = false;
+bool CopernicusGPS::flushToNextPacket(bool block) {
+    while (true) {
+        if (m_serial->available() <= 0) {
+            if (block) blockForData();
+            else return false;
         }
-    }
-    if (dle) {
-        blockForData();
-        goto KEEP_READING;
+        int b = m_serial->read();
+        if (b != CTRL_DLE) continue;
+        if (m_serial->available() <= 0) blockForData();
+        b = m_serial->read();
+        if (b == CTRL_ETX) return true;
     }
 }
 
-// should create processOnePacket(), returning type of packet.
+/**
+ * Process one TSIP packet from the stream, returning the ID of the packet
+ * processed. If `block` is `false`, this function will return `RPT_NONE` if
+ * no packet data was available. Otherwise, a valid packet ID or `RPT_ERROR` will
+ * be returned.
+ * 
+ * Must be called regularly or in response to serial events. Example usage:
+ *      
+ *      // flush packets in a tight loop:
+ *      while (gps.processOnePacket(false) != RPT_NONE) {}
+ * 
+ * Event handling:
+ * 
+ *      ReportType evt;
+ *      while ((evt = gps.processOnePacket(false)) != RPT_NONE) {
+ *          switch (evt) {
+ *              // respond to updates
+ *          }
+ *      }
+ * 
+ * @param block If `true`, will always wait for a complete packet to arrive.
+ * @return The report ID of the processed packet, or `RPT_NONE` if `block`
+ * is `false` and no data was available.
+ */
+ReportType CopernicusGPS::processOnePacket(bool block) {
+    // packets are of the form:
+    //   <DLE> <rpt-id> <data bytes ...> <DLE> <ETX>
+    //   literal <DLE> bytes embedded in data are sent as <DLE> <DLE>.
+    while (true) {
+        if (m_serial->available() <= 0) {
+            if (block) blockForData();
+            else return RPT_NONE;
+        }
+        int b = m_serial->read();
+        if (b != CTRL_DLE) {
+            // we're not at the start of a packet; find the end.
+            if (not flushToNextPacket(block)) return RPT_NONE;
+            continue;
+        }
+        if (m_serial->available() <= 0) blockForData();
+        b = m_serial->read();
+        if (b == CTRL_DLE) {
+            // double-DLE; a literal, not a packet header. Find the end.
+            if (not flushToNextPacket(block)) return RPT_NONE;
+            continue;
+        } else if (b == CTRL_ETX) {
+            // we're at the apparent end of a packet. this should be
+            // followed by the start of another. Go around the horn
+            // and try again.
+            continue;
+        } else {
+            ReportType rpt = static_cast<ReportType>(b);
+            processReport(rpt);
+            return rpt;
+        }
+    }
+}
 
 /**
  * Consume the two terminating bytes of a TSIP packet, which
@@ -165,7 +227,7 @@ bool CopernicusGPS::endReport() {
  ***********************/
 
 
-void CopernicusGPS::processReport(ReportType type) {
+bool CopernicusGPS::processReport(ReportType type) {
     bool ok = false;
     bool unknown = false;
     switch (type) {
@@ -191,17 +253,10 @@ void CopernicusGPS::processReport(ReportType type) {
             // consume the rest of this packet, and
             // process the next one if it's available.
             unknown = true;
-            receive();
+            flushToNextPacket(false);
+            break;
     }
-    // notify listeners that something happened
-    if (not unknown) {
-        if (not ok) {
-            type = RPT_ERROR;
-        }
-        for (int i = 0; i < m_n_listeners; i++) {
-            m_listeners[i]->gpsEvent(type, this);
-        }
-    }
+    return unknown or ok;
 }
 
 bool CopernicusGPS::process_p_LLA_32() {
@@ -215,7 +270,9 @@ bool CopernicusGPS::process_p_LLA_32() {
     SAVE_BYTES(&fix->bias.bits, buf, 4);
     SAVE_BYTES(&fix->fixtime.bits, buf, 4);
     
-    return endReport();
+    bool ok = endReport();
+    if (not ok) m_vfix.type = RPT_ERROR;
+    return ok;
 }
 
 bool CopernicusGPS::process_p_LLA_64() {
@@ -229,7 +286,9 @@ bool CopernicusGPS::process_p_LLA_64() {
     SAVE_BYTES(&fix->bias.bits, buf, 8);
     SAVE_BYTES(&fix->fixtime.bits, buf, 4);
     
-    return endReport();
+    bool ok = endReport();
+    if (not ok) m_vfix.type = RPT_ERROR;
+    return ok;
 }
 
 bool CopernicusGPS::process_p_XYZ_32() {
@@ -243,7 +302,9 @@ bool CopernicusGPS::process_p_XYZ_32() {
     SAVE_BYTES(&fix->bias.bits, buf, 4);
     SAVE_BYTES(&fix->fixtime.bits, buf, 4);
     
-    return endReport();
+    bool ok = endReport();
+    if (not ok) m_pfix.type = RPT_ERROR;
+    return ok;
 }
 
 bool CopernicusGPS::process_p_XYZ_64() {
@@ -257,7 +318,9 @@ bool CopernicusGPS::process_p_XYZ_64() {
     SAVE_BYTES(&fix->bias.bits, buf, 8);
     SAVE_BYTES(&fix->fixtime.bits, buf, 4);
     
-    return endReport();
+    bool ok = endReport();
+    if (not ok) m_pfix.type = RPT_ERROR;
+    return ok;
 }
 
 bool CopernicusGPS::process_v_XYZ() {
@@ -271,7 +334,9 @@ bool CopernicusGPS::process_v_XYZ() {
     SAVE_BYTES(&fix->bias.bits, buf, 4);
     SAVE_BYTES(&fix->fixtime.bits, buf, 4);
     
-    return endReport();
+    bool ok = endReport();
+    if (not ok) m_vfix.type = RPT_ERROR;
+    return ok;
 }
 
 bool CopernicusGPS::process_v_ENU() {
@@ -285,7 +350,9 @@ bool CopernicusGPS::process_v_ENU() {
     SAVE_BYTES(&fix->bias.bits, buf, 4);
     SAVE_BYTES(&fix->fixtime.bits, buf, 4);
     
-    return endReport();
+    bool ok = endReport();
+    if (not ok) m_vfix.type = RPT_ERROR;
+    return ok;
 }
 
 bool CopernicusGPS::process_GPSTime() {
@@ -295,7 +362,9 @@ bool CopernicusGPS::process_GPSTime() {
     SAVE_BYTES(&m_time.week_no, buf, 2);
     SAVE_BYTES(&m_time.utc_offs, buf, 4);
     
-    return endReport();
+    bool ok = endReport();
+    if (not ok)  m_time.time_of_week.bits = 0xBF800000; // -1
+    return ok;
 }
 
 bool CopernicusGPS::process_health() {
@@ -303,7 +372,9 @@ bool CopernicusGPS::process_health() {
     if (readDataBytes(buf, 2) != 2) return false;
     m_status.health = static_cast<GPSHealth>(buf[0]);
     
-    return endReport();
+    bool ok = endReport();
+    if (not ok) m_status.health = HLTH_UNKNOWN;
+    return ok;
 }
 
 bool CopernicusGPS::process_addl_status() {
@@ -363,7 +434,7 @@ const VelFix& CopernicusGPS::getVelocityFix() const {
  * @param lsnr Listener to add.
  * @return `false` if there was not enough space to add the listener, `true` otherwise.
  */
-bool CopernicusGPS::addListener(GPSListener *lsnr) {
+bool CopernicusGPS::addListener(GPSPacketProcessor *lsnr) {
     for (int i = 0; i < m_n_listeners; i++) {
         if (m_listeners[i] == lsnr) return true;
     }
@@ -376,7 +447,7 @@ bool CopernicusGPS::addListener(GPSListener *lsnr) {
  * Cease to notify the given `GPSListener` of GPS events.
  * @param lsnr Listener to remove.
  */
-void CopernicusGPS::removeListener(GPSListener *lsnr) {
+void CopernicusGPS::removeListener(GPSPacketProcessor *lsnr) {
     bool found = false;
     for (int i = 0; i < m_n_listeners; i++) {
         if (m_listeners[i] == lsnr) {
@@ -395,4 +466,4 @@ void CopernicusGPS::removeListener(GPSListener *lsnr) {
  * gps listener             *
  ****************************/
 
-GPSListener::~GPSListener() {}
+GPSPacketProcessor::~GPSPacketProcessor() {}

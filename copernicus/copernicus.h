@@ -39,11 +39,11 @@ class CopernicusGPS; // fwd decl
  * Listener class          *
  ***************************/
 
-class GPSListener {
+class GPSPacketProcessor {
 public:
-    virtual ~GPSListener();
+    virtual ~GPSPacketProcessor();
     
-    virtual void gpsEvent(ReportType type, CopernicusGPS *gps) = 0;
+    virtual bool gpsPacket(ReportType type, CopernicusGPS *gps) = 0;
 };
 
 /***************************
@@ -63,6 +63,7 @@ public:
     CopernicusGPS(int serial=0);
     
     void receive();
+    ReportType processOnePacket(bool block=false);
     
     void beginCommand(CommandID cmd);
     void writeDataBytes(const uint8_t *bytes, int n);
@@ -74,12 +75,12 @@ public:
     const VelFix&    getVelocityFix() const;
     const GPSStatus& getStatus() const;
     
-    bool addListener(GPSListener *lsnr);
-    void removeListener(GPSListener *lsnr);
+    bool addListener(GPSPacketProcessor *lsnr);
+    void removeListener(GPSPacketProcessor *lsnr);
     
 private:
     
-    void processReport(ReportType type);
+    bool processReport(ReportType type);
     
     bool process_p_LLA_32();
     bool process_p_LLA_64();
@@ -94,6 +95,7 @@ private:
     
     // todo: fix this busy wait.
     inline void blockForData() { while (m_serial->available() <= 0) {} }
+    bool flushToNextPacket(bool block=true);
     bool endReport();
     
     HardwareSerial *m_serial;
@@ -101,7 +103,7 @@ private:
     VelFix    m_vfix;
     GPSTime   m_time;
     GPSStatus m_status;
-    GPSListener *m_listeners[N_GPS_LISTENERS];
+    GPSPacketProcessor *m_listeners[N_GPS_LISTENERS];
     uint8_t m_n_listeners;
 };
 

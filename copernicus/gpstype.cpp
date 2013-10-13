@@ -9,8 +9,8 @@
  * Fix types               *
  ***************************/
 
-PosFix::PosFix() : type(RPT_UNKNOWN) {}
-VelFix::VelFix() : type(RPT_UNKNOWN) {}
+PosFix::PosFix() : type(RPT_NONE) {}
+VelFix::VelFix() : type(RPT_NONE) {}
 
 LLA_Fix<Float32>* PosFix::getLLA_32() {
     if (type == RPT_FIX_POS_LLA_SP) return &lla_32;

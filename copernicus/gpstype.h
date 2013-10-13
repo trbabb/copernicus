@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <cfloat>
 
+class CopernicusGPS; // fwd decl
+
 /**
  * @defgroup datapoint
  * @brief Various GPS datapoint types.
@@ -33,7 +35,7 @@ enum ReportType {
     /// Set if a known packet was corrupted or could not be processed.
     RPT_ERROR = -1,
     /// Set in fixes if the fix is invalid and/or no fix has been obtained yet.
-    RPT_UNKNOWN = 0x00,
+    RPT_NONE = 0x00,
     
     // position/velocity fixes
     
@@ -172,9 +174,13 @@ struct ENU_VFix {
  * 
  * Depending on the reporting mode of the receiver, this structure may store
  * a report of type `RPT_FIX_POS_LLA_SP`, `RPT_FIX_POS_LLA_DP`, `RPT_FIX_POS_XYZ_SP`,
- * or `RPT_FIX_POS_XYZ_DP`. The stored type is indicated by `PosFix.type`; use
- * one of the four access methods to obtain an object storing the actual position data.
- * Access methods which don't currently correspond to the store type will return `NULL`.
+ * `RPT_FIX_POS_XYZ_DP`, or `RPT_NONE`. The stored type is indicated by 
+ * `PosFix.type`; use one of the four access methods to obtain an object storing 
+ * the actual position data. Access methods which don't currently correspond to 
+ * the store type will return `NULL`.
+ * 
+ * If the report type is unknown, there is not yet a valid fix and all accessors 
+ * will return `NULL`.
  * 
  * For example:
  *     
@@ -193,6 +199,15 @@ struct PosFix {
     /// Format of stored position fix.
     ReportType type;
     
+    PosFix();
+    
+    LLA_Fix<Float32> *getLLA_32();
+    LLA_Fix<Float64> *getLLA_64();
+    XYZ_Fix<Float32> *getXYZ_32();
+    XYZ_Fix<Float64> *getXYZ_64();
+    
+protected:
+    
     union {
         XYZ_Fix<Float32> xyz_32;
         XYZ_Fix<Float64> xyz_64;
@@ -200,22 +215,20 @@ struct PosFix {
         LLA_Fix<Float64> lla_64;
     };
     
-    PosFix();
-    
-    LLA_Fix<Float32> *getLLA_32();
-    LLA_Fix<Float64> *getLLA_64();
-    XYZ_Fix<Float32> *getXYZ_32();
-    XYZ_Fix<Float64> *getXYZ_64();
+    friend class CopernicusGPS;
 };
 
 /**
  * @brief Velocity fix.
  * 
  * Depending on the reporting mode of the receiver, this structure may store
- * a report of type `RPT_FIX_VEL_XYZ` or `RPT_FIX_VEL_ENU`. The stored type is 
- * indicated by `VelFix.type`; use one of the two access methods to obtain an 
- * object storing the actual velocity data. Access methods which don't currently 
- * correspond to the store type will return `NULL`.
+ * a report of type `RPT_FIX_VEL_XYZ`, `RPT_FIX_VEL_ENU`, or `RPT_NONE`. The 
+ * stored type is indicated by `VelFix.type`; use one of the two access methods 
+ * to obtain an object storing the actual velocity data. Access methods which 
+ * don't currently correspond to the store type will return `NULL`. 
+ * 
+ * If the report type is unknown, there is not yet a valid fix and all accessors 
+ * will return `NULL`.
  * 
  * For example:
  *     
@@ -233,15 +246,19 @@ struct VelFix {
     /// Format of stored velocity fix.
     ReportType type;
     
+    VelFix();
+    
+    XYZ_VFix *getXYZ();
+    ENU_VFix *getENU();
+    
+protected:
+    
     union {
         XYZ_VFix xyz;
         ENU_VFix enu;
     };
     
-    VelFix();
-    
-    XYZ_VFix *getXYZ();
-    ENU_VFix *getENU();
+    friend class CopernicusGPS;
 };
 
 struct GPSTime {
