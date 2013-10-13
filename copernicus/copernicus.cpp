@@ -1,5 +1,5 @@
 /* 
- * File:   copernicus.cpp
+ * File:   CopernicusGPS.cpp
  * Author: tbabb
  * 
  * Created on October 5, 2013, 10:35 PM
@@ -21,12 +21,12 @@
 
 
 /**
- * Construct a new `copernicus` object.
+ * Construct a new `CopernicusGPS` object.
  * 
  * @param serial Arduino serial stream to monitor. 0 is `Serial`, 1 is 
  * `Serial1`, etc.
  */
-copernicus::copernicus(int serial_num):
+CopernicusGPS::CopernicusGPS(int serial_num):
         m_n_listeners(0) {
     // ifdefs mirrored from HardwareSerial.h
     switch (serial_num) {
@@ -57,7 +57,7 @@ copernicus::copernicus(int serial_num):
  * command type.
  * @param cmd Command to begin.
  */
-void copernicus::beginCommand(CommandID cmd) {
+void CopernicusGPS::beginCommand(CommandID cmd) {
     m_serial->write((uint8_t)CTRL_DLE);
     m_serial->write((uint8_t)cmd);
 }
@@ -65,7 +65,7 @@ void copernicus::beginCommand(CommandID cmd) {
 /**
  * End a command by sending the end-of-transmission byte sequence.
  */
-void copernicus::endCommand() {
+void CopernicusGPS::endCommand() {
     m_serial->write((uint8_t)CTRL_DLE);
     m_serial->write((uint8_t)CTRL_ETX);
 }
@@ -79,7 +79,7 @@ void copernicus::endCommand() {
  * @param n Number of decoded bytes to read.
  * @return Number of bytes actually written to `dst`.
  */
-int copernicus::readDataBytes(uint8_t *dst, int n) {
+int CopernicusGPS::readDataBytes(uint8_t *dst, int n) {
     for (int i = 0; i < n; i++, dst++) {
         blockForData();
         int read = m_serial->read();
@@ -109,7 +109,7 @@ int copernicus::readDataBytes(uint8_t *dst, int n) {
  * @param bytes Data bytes to write.
  * @param n Number of bytes to encode.
  */
-void copernicus::writeDataBytes(const uint8_t* bytes, int n) {
+void CopernicusGPS::writeDataBytes(const uint8_t* bytes, int n) {
     for (int i = 0; i < n; i++) {
         m_serial->write(bytes[i]);
         if (bytes[i] == CTRL_DLE) {
@@ -124,7 +124,7 @@ void copernicus::writeDataBytes(const uint8_t* bytes, int n) {
  * port. Internal state will be updated and listeners notified of events as necessary. 
  * Must be called regularly or in response to serial events.
  */
-void copernicus::receive() {
+void CopernicusGPS::receive() {
     bool dle = false;
     KEEP_READING:
     while (m_serial->available() > 0) {
@@ -151,7 +151,7 @@ void copernicus::receive() {
  * should be `0x10 0x03`. Return false if the expected
  * bytes were not found.
  */
-bool copernicus::endReport() {
+bool CopernicusGPS::endReport() {
     blockForData();
     if (m_serial->read() != CTRL_DLE) return false;
     blockForData();
@@ -165,7 +165,7 @@ bool copernicus::endReport() {
  ***********************/
 
 
-void copernicus::processReport(ReportType type) {
+void CopernicusGPS::processReport(ReportType type) {
     bool ok = false;
     bool unknown = false;
     switch (type) {
@@ -199,12 +199,12 @@ void copernicus::processReport(ReportType type) {
             type = RPT_ERROR;
         }
         for (int i = 0; i < m_n_listeners; i++) {
-            m_listeners[i]->gps_event(type, this);
+            m_listeners[i]->gpsEvent(type, this);
         }
     }
 }
 
-bool copernicus::process_p_LLA_32() {
+bool CopernicusGPS::process_p_LLA_32() {
     m_pfix.type = RPT_FIX_POS_LLA_SP;
     LLA_Fix<Float32> *fix = &m_pfix.lla_32;
     uint8_t buf[4];
@@ -218,7 +218,7 @@ bool copernicus::process_p_LLA_32() {
     return endReport();
 }
 
-bool copernicus::process_p_LLA_64() {
+bool CopernicusGPS::process_p_LLA_64() {
     m_pfix.type = RPT_FIX_POS_LLA_DP;
     LLA_Fix<Float64> *fix = &m_pfix.lla_64;
     uint8_t buf[8];
@@ -232,7 +232,7 @@ bool copernicus::process_p_LLA_64() {
     return endReport();
 }
 
-bool copernicus::process_p_XYZ_32() {
+bool CopernicusGPS::process_p_XYZ_32() {
     m_pfix.type = RPT_FIX_POS_XYZ_SP;
     XYZ_Fix<Float32> *fix = &m_pfix.xyz_32;
     uint8_t buf[4];
@@ -246,7 +246,7 @@ bool copernicus::process_p_XYZ_32() {
     return endReport();
 }
 
-bool copernicus::process_p_XYZ_64() {
+bool CopernicusGPS::process_p_XYZ_64() {
     m_pfix.type = RPT_FIX_POS_XYZ_DP;
     XYZ_Fix<Float64> *fix = &m_pfix.xyz_64;
     uint8_t buf[8];
@@ -260,7 +260,7 @@ bool copernicus::process_p_XYZ_64() {
     return endReport();
 }
 
-bool copernicus::process_v_XYZ() {
+bool CopernicusGPS::process_v_XYZ() {
     m_vfix.type = RPT_FIX_VEL_XYZ;
     XYZ_VFix *fix = &m_vfix.xyz;
     uint8_t buf[4];
@@ -274,7 +274,7 @@ bool copernicus::process_v_XYZ() {
     return endReport();
 }
 
-bool copernicus::process_v_ENU() {
+bool CopernicusGPS::process_v_ENU() {
     m_vfix.type = RPT_FIX_VEL_ENU;
     ENU_VFix *fix = &m_vfix.enu;
     uint8_t buf[4];
@@ -288,7 +288,7 @@ bool copernicus::process_v_ENU() {
     return endReport();
 }
 
-bool copernicus::process_GPSTime() {
+bool CopernicusGPS::process_GPSTime() {
     uint8_t buf[4];
     
     SAVE_BYTES(&m_time.time_of_week.bits, buf, 4);
@@ -298,7 +298,7 @@ bool copernicus::process_GPSTime() {
     return endReport();
 }
 
-bool copernicus::process_health() {
+bool CopernicusGPS::process_health() {
     uint8_t buf[2];
     if (readDataBytes(buf, 2) != 2) return false;
     m_status.health = static_cast<GPSHealth>(buf[0]);
@@ -306,7 +306,7 @@ bool copernicus::process_health() {
     return endReport();
 }
 
-bool copernicus::process_addl_status() {
+bool CopernicusGPS::process_addl_status() {
     uint8_t buf[3];
     if (readDataBytes(buf, 3) != 3) return false;
     m_status.rtclock_unavailable = (buf[1] & 0x02) != 0;
@@ -315,7 +315,7 @@ bool copernicus::process_addl_status() {
     return endReport();
 }
 
-bool copernicus::process_sbas_status() {
+bool CopernicusGPS::process_sbas_status() {
     uint8_t buf;
     if (readDataBytes(&buf, 1) != 1) return false;
     m_status.sbas_corrected = (buf & 0x01) != 0;
@@ -331,7 +331,7 @@ bool copernicus::process_sbas_status() {
 /**
  * Get the monitored Serial IO object.
  */
-HardwareSerial* copernicus::getSerial() {
+HardwareSerial* CopernicusGPS::getSerial() {
     return m_serial;
 }
 
@@ -339,21 +339,21 @@ HardwareSerial* copernicus::getSerial() {
  * Get the status and health of the reciever.
  * If the unit has a GPS lock, `getStatus().health` will equal `HLTH_DOING_FIXES`.
  */
-const GPSStatus& copernicus::getStatus() const {
+const GPSStatus& CopernicusGPS::getStatus() const {
     return m_status;
 }
 
 /**
  * Get the most current position fix.
  */
-const PosFix& copernicus::getPositionFix() const {
+const PosFix& CopernicusGPS::getPositionFix() const {
     return m_pfix;
 }
 
 /**
  * Get the most current velocity fix.
  */
-const VelFix& copernicus::getVelocityFix() const {
+const VelFix& CopernicusGPS::getVelocityFix() const {
     return m_vfix;
 }
 
@@ -363,7 +363,7 @@ const VelFix& copernicus::getVelocityFix() const {
  * @param lsnr Listener to add.
  * @return `false` if there was not enough space to add the listener, `true` otherwise.
  */
-bool copernicus::addListener(gps_listener *lsnr) {
+bool CopernicusGPS::addListener(GPSListener *lsnr) {
     for (int i = 0; i < m_n_listeners; i++) {
         if (m_listeners[i] == lsnr) return true;
     }
@@ -373,10 +373,10 @@ bool copernicus::addListener(gps_listener *lsnr) {
 }
 
 /**
- * Cease to notify the given `gps_listener` of GPS events.
+ * Cease to notify the given `GPSListener` of GPS events.
  * @param lsnr Listener to remove.
  */
-void copernicus::removeListener(gps_listener *lsnr) {
+void CopernicusGPS::removeListener(GPSListener *lsnr) {
     bool found = false;
     for (int i = 0; i < m_n_listeners; i++) {
         if (m_listeners[i] == lsnr) {
@@ -395,4 +395,4 @@ void copernicus::removeListener(gps_listener *lsnr) {
  * gps listener             *
  ****************************/
 
-gps_listener::~gps_listener() {}
+GPSListener::~GPSListener() {}

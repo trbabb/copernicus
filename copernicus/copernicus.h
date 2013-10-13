@@ -8,12 +8,23 @@
 //TODO: support GPS time
 //TODO: add processOnePacket(); allow for blocking commands.
 //TODO: add commands
+//TODO: fixp support
 
 #ifndef COPERNICUS_H
 #define	COPERNICUS_H
 
 #define CTRL_DLE 0x10
 #define CTRL_ETX 0x03
+
+/**
+ * @defgroup monitor
+ * @brief Main classes for monitoring and commanding the Trimble Copernicus.
+ */
+
+/**
+ * @addtogroup monitor
+ * @{
+ */
 
 // arduino doesn't support std::vector
 // so today we will be violating the zero/one/infinity rule.
@@ -22,17 +33,17 @@
 #include "gpstype.h"
 #include "Arduino.h"
 
-class copernicus; // fwd decl
+class CopernicusGPS; // fwd decl
 
 /***************************
  * Listener class          *
  ***************************/
 
-class gps_listener {
+class GPSListener {
 public:
-    virtual ~gps_listener();
+    virtual ~GPSListener();
     
-    virtual void gps_event(ReportType type, copernicus *gps) = 0;
+    virtual void gpsEvent(ReportType type, CopernicusGPS *gps) = 0;
 };
 
 /***************************
@@ -47,9 +58,9 @@ public:
 //   - reported GPS time is that of the last PPS. So at the next
 //     PPS pulse, add 1 to the captured GPS time, and that's the current time.
 
-class copernicus {
+class CopernicusGPS {
 public:
-    copernicus(int serial=0);
+    CopernicusGPS(int serial=0);
     
     void receive();
     
@@ -63,8 +74,8 @@ public:
     const VelFix&    getVelocityFix() const;
     const GPSStatus& getStatus() const;
     
-    bool addListener(gps_listener *lsnr);
-    void removeListener(gps_listener *lsnr);
+    bool addListener(GPSListener *lsnr);
+    void removeListener(GPSListener *lsnr);
     
 private:
     
@@ -90,9 +101,11 @@ private:
     VelFix    m_vfix;
     GPSTime   m_time;
     GPSStatus m_status;
-    gps_listener *m_listeners[N_GPS_LISTENERS];
+    GPSListener *m_listeners[N_GPS_LISTENERS];
     uint8_t m_n_listeners;
 };
+
+/// @} // addtogroup monitor
 
 #endif	/* COPERNICUS_H */
 

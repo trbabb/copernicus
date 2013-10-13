@@ -96,8 +96,15 @@ enum GPSHealth {
 // but we still need to be able to store the bits of a 32-bit float somehow.
 
 union Float32 {
+    /// The bits of an IEEE 754 32-bit float.
     uint32_t bits;
 #if FLT_MANT_DIG == 24 || defined(PARSING_DOXYGEN)
+    /**
+     * @brief Not available unless the `float` type is a 32-bit IEEE 754. 
+     * 
+     * This is not the case for most Arduino boards. If `double` is available 
+     * and 32-bit, `f` will be declared as `double` instead.
+     */
     float f;
 #elif DBL_MANT_DIG == 24
     double f;
@@ -105,8 +112,14 @@ union Float32 {
 };
 
 union Float64 {
+    /// The bits of an IEEE 754 64-bit float.
     uint64_t bits;
 #if DBL_MANT_DIG == 53 || defined(PARSING_DOXYGEN)
+    /**
+     * @brief Not available unless the `double` type is a 64-bit IEEE 754. 
+     * 
+     * This is not the case for most Arduino boards.
+     */
     double d;
 #elif LDBL_MANT_DIG == 53
     long double d;
@@ -154,8 +167,30 @@ struct ENU_VFix {
     Float32 fixtime;
 };
 
+/**
+ * @brief Position fix.
+ * 
+ * Depending on the reporting mode of the receiver, this structure may store
+ * a report of type `RPT_FIX_POS_LLA_SP`, `RPT_FIX_POS_LLA_DP`, `RPT_FIX_POS_XYZ_SP`,
+ * or `RPT_FIX_POS_XYZ_DP`. The stored type is indicated by `PosFix.type`; use
+ * one of the four access methods to obtain an object storing the actual position data.
+ * Access methods which don't currently correspond to the store type will return `NULL`.
+ * 
+ * For example:
+ *     
+ *      const PosFix &fix = gps.GetPositionFix();
+ *      if (fix.type == RPT_FIX_POS_LLA_SP) {
+ *          LLA_Fix<Float32> fixdata = fix.getLLA_32();
+ *          // ...
+ *      } else if (fix.type == RPT_FIX_POS_XYZ_SP) {
+ *          XYZ_FIX<Float32> fixdata = fix.getXYZ_32();
+ *          // ...
+ *      } // etc.
+ *     
+ */
 struct PosFix {
     
+    /// Format of stored position fix.
     ReportType type;
     
     union {
@@ -173,7 +208,29 @@ struct PosFix {
     XYZ_Fix<Float64> *getXYZ_64();
 };
 
+/**
+ * @brief Velocity fix.
+ * 
+ * Depending on the reporting mode of the receiver, this structure may store
+ * a report of type `RPT_FIX_VEL_XYZ` or `RPT_FIX_VEL_ENU`. The stored type is 
+ * indicated by `VelFix.type`; use one of the two access methods to obtain an 
+ * object storing the actual velocity data. Access methods which don't currently 
+ * correspond to the store type will return `NULL`.
+ * 
+ * For example:
+ *     
+ *     const VelFix &fix = gps.GetVelocityFix();
+ *     if (fix.type == RPT_FIX_VEL_ENU) {
+ *         ENU_VFix fixdata = fix.getENU();
+ *         // ...
+ *     } else {
+ *         XYZ_VFix fixdata = fix.getXYZ();
+ *         // ...
+ *     }
+ * .
+ */
 struct VelFix {
+    /// Format of stored velocity fix.
     ReportType type;
     
     union {
