@@ -207,6 +207,22 @@ bool CopernicusGPS::endReport() {
  * Commands            *
  ***********************/
 
+/**
+ * Set the format of position, velocity, and altitude fixes.
+ * PPS settings and GPS time format may also be set with this command.
+ * 
+ * To leave a fix mode unchanged, pass `RPT_NONE`. Other mode settings
+ * have `NOCHANGE` constants which will preserve the current settings.
+ * 
+ * @param pos_fixmode New position fix format. Any of the `RPT_FIX_POS_*` constants, or `RPT_NONE`.
+ * @param vel_fixmode New velocity fix format. Any of the `RPT_FIX_VEL_*` constants, or `RPT_NONE`.
+ * @param alt New altitude format.
+ * @param pps New PPS setting.
+ * @param time New GPS time format.
+ * @param block Whether to wait for a confirmation from the receiver that the settings
+ * have taken effect.
+ * @return `true` if the settings were change successfully, `false` if an I/O problem occurred.
+ */
 bool CopernicusGPS::setFixMode(ReportType pos_fixmode, 
                                ReportType vel_fixmode,
                                AltMode alt,
