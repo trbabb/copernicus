@@ -1,6 +1,7 @@
 var searchData=
 [
   ['getenu',['getENU',['../struct_vel_fix.html#a8e60e9f8b4fb23f622553215461ebad7',1,'VelFix']]],
+  ['getgpstime',['getGPSTime',['../class_copernicus_g_p_s.html#a9a0180423be632ca510f20122e29d488',1,'CopernicusGPS']]],
   ['getlla_5f32',['getLLA_32',['../struct_pos_fix.html#a6fe2debd8c81787140c0f4e0a8814171',1,'PosFix']]],
   ['getlla_5f64',['getLLA_64',['../struct_pos_fix.html#ae62977a1b6409ddeba92d222ebef998a',1,'PosFix']]],
   ['getpositionfix',['getPositionFix',['../class_copernicus_g_p_s.html#a146c8f150e8033475670802b7681a277',1,'CopernicusGPS']]],

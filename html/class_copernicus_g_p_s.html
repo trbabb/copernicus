@@ -120,6 +120,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a146c8f150e8033475670802b7681a277"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad1479fca86ee27c0a803d5e9425c7b41"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="struct_vel_fix.html">VelFix</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_copernicus_g_p_s.html#ad1479fca86ee27c0a803d5e9425c7b41">getVelocityFix</a> () const </td></tr>
 <tr class="separator:ad1479fca86ee27c0a803d5e9425c7b41"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a0180423be632ca510f20122e29d488"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="struct_g_p_s_time.html">GPSTime</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_copernicus_g_p_s.html#a9a0180423be632ca510f20122e29d488">getGPSTime</a> () const </td></tr>
+<tr class="separator:a9a0180423be632ca510f20122e29d488"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ecac2d93ea46da894c39ab657358dea"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="struct_g_p_s_status.html">GPSStatus</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_copernicus_g_p_s.html#a0ecac2d93ea46da894c39ab657358dea">getStatus</a> () const </td></tr>
 <tr class="separator:a0ecac2d93ea46da894c39ab657358dea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a905433b9cbdac67f089ef66f91f949cb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_copernicus_g_p_s.html#a905433b9cbdac67f089ef66f91f949cb">addPacketProcessor</a> (<a class="el" href="class_g_p_s_packet_processor.html">GPSPacketProcessor</a> *pcs)</td></tr>
@@ -146,7 +148,7 @@ Public Member Functions</h2></td></tr>
 <p>Construct a new <code><a class="el" href="class_copernicus_g_p_s.html" title="Class for communication with Trimble Copernicus GPS chip.">CopernicusGPS</a></code> object.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">serial</td><td>Arduino serial stream to monitor. 0 is <code>Serial</code>, 1 is <code>Serial1</code>, etc. </td></tr>
+    <tr><td class="paramname">serial_num</td><td>Arduino serial stream to monitor. 0 is <code>Serial</code>, 1 is <code>Serial1</code>, etc. </td></tr>
   </table>
   </dd>
 </dl>
@@ -214,6 +216,22 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>End a command by sending the end-of-transmission byte sequence. </p>
+
+</div>
+</div>
+<a class="anchor" id="a9a0180423be632ca510f20122e29d488"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const <a class="el" href="struct_g_p_s_time.html">GPSTime</a> &amp; CopernicusGPS::getGPSTime </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Get the most recent GPS time report. For accurate current time, this datum must be correlated with a PPS pulse signal. </p>
 
 </div>
 </div>
@@ -501,7 +519,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Oct 14 2013 01:44:02 for Copernicus by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 14 2013 01:54:29 for Copernicus by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 </small></address>
