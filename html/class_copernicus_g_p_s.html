@@ -415,6 +415,20 @@ Public Member Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Set the format of position, velocity, and altitude fixes. PPS settings and GPS time format may also be set with this command.</p>
+<p>To leave a fix mode unchanged, pass <code>RPT_NONE</code>. Other mode settings have <code>NOCHANGE</code> constants which will preserve the current settings.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">pos_fixmode</td><td>New position fix format. Any of the <code>RPT_FIX_POS_*</code> constants, or <code>RPT_NONE</code>. </td></tr>
+    <tr><td class="paramname">vel_fixmode</td><td>New velocity fix format. Any of the <code>RPT_FIX_VEL_*</code> constants, or <code>RPT_NONE</code>. </td></tr>
+    <tr><td class="paramname">alt</td><td>New altitude format. </td></tr>
+    <tr><td class="paramname">pps</td><td>New PPS setting. </td></tr>
+    <tr><td class="paramname">time</td><td>New GPS time format. </td></tr>
+    <tr><td class="paramname">block</td><td>Whether to wait for a confirmation from the receiver that the settings have taken effect. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if the settings were change successfully, <code>false</code> if an I/O problem occurred. </dd></dl>
 
 </div>
 </div>
@@ -482,7 +496,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Oct 13 2013 16:51:06 for Copernicus by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sun Oct 13 2013 17:02:41 for Copernicus by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 </small></address>
