@@ -23,7 +23,7 @@
 /**
  * Construct a new `CopernicusGPS` object.
  * 
- * @param serial Arduino serial stream to monitor. 0 is `Serial`, 1 is 
+ * @param serial_num Arduino serial stream to monitor. 0 is `Serial`, 1 is 
  * `Serial1`, etc.
  */
 CopernicusGPS::CopernicusGPS(int serial_num):

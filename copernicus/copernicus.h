@@ -83,6 +83,9 @@ public:
 //   - reported GPS time is that of the last PPS. So at the next
 //     PPS pulse, add 1 to the captured GPS time, and that's the current time.
 
+/**
+ * @brief Class for communication with Trimble Copernicus GPS chip.
+ */
 class CopernicusGPS {
 public:
     CopernicusGPS(int serial=0);
