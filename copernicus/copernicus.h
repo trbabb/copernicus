@@ -108,6 +108,7 @@ public:
     HardwareSerial  *getSerial();
     const PosFix&    getPositionFix() const;
     const VelFix&    getVelocityFix() const;
+    const GPSTime&   getGPSTime() const;
     const GPSStatus& getStatus() const;
     
     bool addPacketProcessor(GPSPacketProcessor *pcs);

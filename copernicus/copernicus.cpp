@@ -532,6 +532,14 @@ const VelFix& CopernicusGPS::getVelocityFix() const {
 }
 
 /**
+ * Get the most recent GPS time report. For accurate current time,
+ * this datum must be correlated with a PPS pulse signal.
+ */
+const GPSTime& CopernicusGPS::getGPSTime() const {
+    return m_time;
+}
+
+/**
  * Add a `GPSPacketProcessor` to be notified of incoming TSIP packets. At most
  * `MAX_PKT_PROCESSORS` (8) are supported at a time. 
  * @param pcs Processor to add.
