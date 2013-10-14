@@ -15,6 +15,11 @@ library, simply
     
 in your sketch.
 
+Documentation
+=============
+
+See: http://trbabb.github.io/copernicus/html/modules.html
+
 Minimum connections
 ===================
 
