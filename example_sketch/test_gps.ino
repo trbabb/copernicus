@@ -1,3 +1,18 @@
+/**
+ * test_gps.ino
+ * 
+ * Example sketch demonstrating the capability of the `copernicus` 
+ * arduino library for the Trimble Copernicus II GPS module.
+ *
+ * This example is written for an Arduino board with two serial ports:
+ * Serial1 is used to communicate with the GPS module, and Serial
+ * relays the incoming GPS data to a connected PC.
+ *
+ * The `copernicus` module can be obtained at:
+ *    https://github.com/trbabb/copernicus
+ */
+
+
 #include <copernicus.h>
 
 #define M_PI  (3.1415926535897932384)
