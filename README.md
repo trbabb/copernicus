@@ -65,13 +65,13 @@ Minimum connections
     <td>TX-A</td>
     <td>23</td>
     <td>7</td>
-    <td>Arduino serial RX pin</td>
+    <td>Arduino serial RX pin<sup>1</sup></td>
   </tr>
   <tr>
     <td>RX-A</td>
     <td>21</td>
     <td>5</td>
-    <td>Arduino serial TX pin, via voltage divider or logic level shifter.</td>
+    <td>Arduino serial TX pin<sup>1</sup>, via voltage divider or logic level shifter.</td>
   </tr>
   <tr>
     <td>PPS</td>
@@ -80,6 +80,8 @@ Minimum connections
     <td>Any Arduino interrupt pin (required for timing only).</td>
   </tr>
 </table>
+
+<sup>1</sup> Note: The GPS unit and USB serial cannot operate simultaneously if they are sharing the same port. Take care to note whether your Arduino board mirrors USB serial data on the serial pins you are using for you GPS! If communication with a PC is required simultaneously with the GPS unit, a board with ate least two hardware serial ports (like the Due) is needed.
 
 Further information
 ===================
