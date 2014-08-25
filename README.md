@@ -81,7 +81,7 @@ Minimum connections
   </tr>
 </table>
 
-<sup>1</sup> Note: The GPS unit and USB serial cannot operate simultaneously if they are sharing the same port. Take care to note whether your Arduino board mirrors USB serial data on the serial pins you are using for you GPS! If communication with a PC is required simultaneously with the GPS unit, a board with ate least two hardware serial ports (like the Due) is needed.
+<sup>1</sup> Note: The GPS unit and USB serial cannot operate simultaneously if they are sharing the same port. Take care to note whether your Arduino board mirrors USB serial data on the serial pins you are using for your GPS! If communication with a PC is required simultaneously with the GPS unit, a board with at least two hardware serial ports (like the Due) is needed.
 
 Further information
 ===================
